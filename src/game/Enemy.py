@@ -5,7 +5,7 @@ class Enemy:
     def __init__(self, game_panel):
         self.x = random.randint(0, game_panel.screen_width)
         self.y = random.randint(0, game_panel.screen_height)
-        self.speed = 3
+        self.speed = 1
         self.tile_size = game_panel.tile_size
         try:
             self.image = pygame.image.load("src\\entity\\Data\\enemy_down_1.png")
