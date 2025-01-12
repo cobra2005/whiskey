@@ -9,7 +9,7 @@ from PIL import Image, ImageTk
 from Leaderboard import Leaderboard
 from Player import Player
 from Bullet import Bullet
-from Enemy import Enemy
+from Enemy import Enemy, StrongEnemy, FastEnemy
 from AmmoBox import AmmoBox
 
 class GamePanel:
@@ -24,16 +24,19 @@ class GamePanel:
         # Kiểm tra va chạm giữa đạn và kẻ địch
         surviving_bullets = []  # Create a new list to store bullets that survived collisions
         for bullet in self.player.bullets:
-            bullet_collided = False  # Flag to track if the bullet collided
+            bullet_collided = False
             for enemy in self.enemies[:]:
                 if abs(bullet.x - enemy.x) < self.tile_size and abs(bullet.y - enemy.y) < self.tile_size:
-                    self.enemies.remove(enemy)
-                    self.score += 1  # Tăng điểm khi tiêu diệt kẻ địch
+                    if isinstance(enemy, StrongEnemy):
+                        enemy.take_damage(self.enemies)  # Giảm máu nếu là StrongEnemy
+                    else:
+                        self.enemies.remove(enemy)  # Tiêu diệt quái thường
+                    self.score += 1  # Tăng điểm
                     bullet_collided = True
-                    break  # No need to check for more enemies if the bullet already collided
+                    break  # Không cần kiểm tra các quái khác
 
             if not bullet_collided:
-                surviving_bullets.append(bullet)  # Add the bullet to the new list if it didn't collide
+                surviving_bullets.append(bullet)
 
         self.player.bullets = surviving_bullets  # Update the player's bullets with the surviving bullets
 
@@ -52,12 +55,45 @@ class GamePanel:
         # Sinh ra kẻ địch mới sau mỗi khoảng thời gian
         self.enemy_spawn_timer += 1
         if self.enemy_spawn_timer >= self.enemy_spawn_rate:
-            self.enemies.append(Enemy(self))  # Tạo kẻ địch mới
-            self.enemy_spawn_timer = 0  # Reset timer
+            if self.score >= 50:
+                enemy_type = random.choice(['normal', 'fast', 'strong'])  # Chọn loại quái ngẫu nhiên
+                while True:
+                    if enemy_type == 'normal':
+                        new_enemy = Enemy(self)
+                    elif enemy_type == 'fast':
+                        new_enemy = FastEnemy(self)
+                    elif enemy_type == 'strong':
+                        new_enemy = StrongEnemy(self)
 
-            # Tăng tốc độ sinh kẻ địch theo thời gian
-            self.enemy_spawn_rate = max(30, self.enemy_spawn_rate - 5)  # Tăng tốc độ sinh kẻ địch (giảm thời gian giữa các lần sinh kẻ địch)
-    # Tăng tốc độ sinh kẻ địch (giảm thời gian giữa các lần sinh kẻ địch)
+                    # Kiểm tra khoảng cách với người chơi
+                    if abs(new_enemy.x - self.player.x) >= self.tile_size * 2 and abs(new_enemy.y - self.player.y) >= self.tile_size * 2:
+                        self.enemies.append(new_enemy)
+                        break  # Thoát vòng lặp khi vị trí hợp lệ
+            elif self.score >= 20:
+                enemy_type = random.choice(['normal', 'fast'])  # Chọn loại quái ngẫu nhiên
+                while True:
+                    if enemy_type == 'normal':
+                        new_enemy = Enemy(self)
+                    elif enemy_type == 'fast':
+                        new_enemy = FastEnemy(self)
+
+                    # Kiểm tra khoảng cách với người chơi
+                    if abs(new_enemy.x - self.player.x) >= self.tile_size * 2 and abs(new_enemy.y - self.player.y) >= self.tile_size * 2:
+                        self.enemies.append(new_enemy)
+                        break  # Thoát vòng lặp khi vị trí hợp lệ
+            
+            else:
+                while True:
+                    new_enemy = Enemy(self)
+
+                    # Kiểm tra khoảng cách với người chơi
+                    if abs(new_enemy.x - self.player.x) >= self.tile_size * 2 and abs(new_enemy.y - self.player.y) >= self.tile_size * 2:
+                        self.enemies.append(new_enemy)
+                        break  # Thoát vòng lặp khi vị trí hợp lệ
+
+            self.enemy_spawn_timer = 0  # Reset timer
+            self.enemy_spawn_rate = max(50, self.enemy_spawn_rate - 5)  # Giảm thời gian giữa các lần sinh
+    
 
     def draw(self):
         # Vẽ các đối tượng trên màn hình
@@ -69,7 +105,13 @@ class GamePanel:
         # Vẽ người chơi, kẻ địch, và hộp đạn
         self.player.draw(self.screen)
         for enemy in self.enemies:
-            enemy.draw(self.screen)
+            if isinstance(enemy, StrongEnemy) and self.strong_enemy_image:
+                self.screen.blit(self.strong_enemy_image, (enemy.x, enemy.y))
+            elif isinstance(enemy, FastEnemy) and self.fast_enemy_image:
+                self.screen.blit(self.fast_enemy_image, (enemy.x, enemy.y))
+            else:
+                enemy.draw(self.screen)  # Vẽ quái thường
+
         for ammo_box in self.ammo_boxes:
             ammo_box.draw(self.screen)
 
@@ -87,8 +129,6 @@ class GamePanel:
     def __init__(self, main_menu):
         pygame.init()
         self.main_menu = main_menu
-
-
         self.original_tile_size = 16
         self.scale = 3
         self.tile_size = self.original_tile_size * self.scale
@@ -96,21 +136,16 @@ class GamePanel:
         self.max_screen_row = 18
         self.screen_width = self.tile_size * self.max_screen_col
         self.screen_height = self.tile_size * self.max_screen_row
-
         self.FPS = 60
         self.enemies = []  # Đặt lên đây trước khi sử dụng
         self.ammo_boxes = []  # Đặt lên đây trước khi sử dụng
-
         self.random = random.Random()
-
         self.frame_count = 0
         self.score = 0
-
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.clock = pygame.time.Clock()
-
-        self.main_menu = main_menu
         self.running = True
+        self.paused = False  # Trạng thái tạm dừng
 
         # Initialize player
         self.player = Player(self)
@@ -150,19 +185,48 @@ class GamePanel:
         self.enemy_spawn_timer = 0
         self.enemy_spawn_rate = 100  # Adjust spawn rate as needed (in frames)  # Thời gian đếm để sinh kẻ địch mới
 
+        try:
+            self.strong_enemy_image = pygame.image.load("src\\game\\Data\\strong_enemy.png")
+            self.strong_enemy_image = pygame.transform.scale(self.strong_enemy_image, (self.tile_size, self.tile_size))
+        except:
+            print("Error loading strong enemy image")
+            self.strong_enemy_image = None
+
+        try:
+            self.fast_enemy_image = pygame.image.load("src\\game\\Data\\fast_enemy.png")
+            self.fast_enemy_image = pygame.transform.scale(self.fast_enemy_image, (self.tile_size, self.tile_size))
+        except:
+            print("Error loading fast enemy image")
+            self.fast_enemy_image = None
+
     def start_game(self):
         while self.running:
             self.handle_events()  # Xử lý sự kiện
-            self.update()         # Cập nhật logic trò chơi
-            self.draw()           # Vẽ màn hình
-            self.check_collision_with_enemy()  # Kiểm tra va chạm
+
+            if not self.paused:  # Chỉ cập nhật và vẽ nếu không tạm dừng
+                self.update()         # Cập nhật logic trò chơi
+                self.draw()           # Vẽ màn hình
+                self.check_collision_with_enemy()  # Kiểm tra va chạm
+            else:
+                self.draw_pause_screen()  # Vẽ màn hình tạm dừng
+
             self.clock.tick(self.FPS)
+
+    def draw_pause_screen(self):
+        # Làm mờ màn hình hoặc vẽ màn hình tạm dừng
+        font = pygame.font.SysFont('Arial', 48)
+        pause_text = font.render("Game Paused", True, (255, 255, 255))
+        self.screen.blit(pause_text, ((self.screen_width - pause_text.get_width()) // 2, self.screen_height // 2))
+        pygame.display.flip()  # Cập nhật màn hình
+
+    
 
     def handle_events(self):
         keys = pygame.key.get_pressed()  # Lấy trạng thái của tất cả các phím
 
-        # Gọi phương thức move từ Player để di chuyển nhân vật
-        self.player.move(keys)
+        # Gọi phương thức move từ Player để di chuyển nhân vật (nếu không bị tạm dừng)
+        if not self.paused:
+            self.player.move(keys)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -170,8 +234,12 @@ class GamePanel:
                 pygame.quit()
                 sys.exit()
 
-            # Kiểm tra sự kiện click chuột trái
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:  # Nếu bấm phím Esc
+                    self.paused = not self.paused  # Chuyển đổi trạng thái tạm dừng
+
+            # Kiểm tra sự kiện click chuột trái (chỉ khi không tạm dừng)
+            if not self.paused and event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # 1 là mã nút cho chuột trái
                     mouse_x, mouse_y = pygame.mouse.get_pos()  # Lấy vị trí chuột trên màn hình
                     self.player.shoot(mouse_x, mouse_y)  # Truyền tọa độ chuột vào phương thức shoot
@@ -197,7 +265,7 @@ class GamePanel:
         self.running = False  # Kết thúc vòng lặp game hiện tại
         # Ẩn cửa sổ game và quay lại menu chính
         
-        self.main_menu.show()  # Hiển thị lại menu chính
+        
 
     def back_to_main_menu(self):
         # Trở lại menu chính
