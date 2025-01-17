@@ -14,6 +14,7 @@ from AmmoBox import AmmoBox
 
 class GamePanel:
     def update(self):
+        self.elapsed_time += 1 / self.FPS  # Cập nhật thời gian trôi qua
         # Cập nhật đạn, kẻ địch, và kiểm tra va chạm
         for bullet in self.player.bullets:
             bullet.update()
@@ -27,10 +28,10 @@ class GamePanel:
             bullet_collided = False
             for enemy in self.enemies[:]:
                 if abs(bullet.x - enemy.x) < self.tile_size and abs(bullet.y - enemy.y) < self.tile_size:
-                    if isinstance(enemy, StrongEnemy):
-                        enemy.take_damage(self.enemies)  # Giảm máu nếu là StrongEnemy
-                    else:
-                        self.enemies.remove(enemy)  # Tiêu diệt quái thường
+                    
+
+                    enemy.take_damage(self.enemies)  
+
                     self.score += 1  # Tăng điểm
                     bullet_collided = True
                     break  # Không cần kiểm tra các quái khác
@@ -44,6 +45,7 @@ class GamePanel:
         for ammo_box in self.ammo_boxes[:]:
             if ammo_box.is_picked_up(self.player):
                 self.ammo_boxes.remove(ammo_box)
+                self.pick_sound.play()
                 self.player.ammo += 5  # Thêm 5 viên đạn khi nhặt được hộp đạn
 
         # Tạo hộp đạn mới sau mỗi khoảng thời gian
@@ -93,7 +95,7 @@ class GamePanel:
 
             self.enemy_spawn_timer = 0  # Reset timer
             self.enemy_spawn_rate = max(50, self.enemy_spawn_rate - 5)  # Giảm thời gian giữa các lần sinh
-    
+
 
     def draw(self):
         # Vẽ các đối tượng trên màn hình
@@ -123,6 +125,24 @@ class GamePanel:
         ammo_text = font.render(f"Ammo: {self.player.ammo}", True, (255, 255, 255))
         self.screen.blit(ammo_text, (10, 40))
 
+        # Tính toán thời gian theo định dạng mm:ss
+        minutes = int(self.elapsed_time // 60)
+        seconds = int(self.elapsed_time % 60)
+        time_text = f"{minutes:02}:{seconds:02}"  # Định dạng với 2 chữ số
+
+        # Hiển thị thời gian        
+        time_font = pygame.font.SysFont('Arial', 48)
+        time_surface = time_font.render(time_text, True, (255, 255, 255))
+        text_width = time_surface.get_width()
+        text_height = time_surface.get_height()
+
+        # Tính vị trí để hiển thị ở giữa màn hình
+        x_position = (self.screen_width - text_width) // 2
+        y_position = self.screen_height // 10  # Ví dụ: đặt ở 1/10 chiều cao màn hình
+
+        # Vẽ thời gian ra màn hình
+        self.screen.blit(time_surface, (x_position, y_position))
+
         # Cập nhật màn hình
         pygame.display.flip()
 
@@ -146,6 +166,7 @@ class GamePanel:
         self.clock = pygame.time.Clock()
         self.running = True
         self.paused = False  # Trạng thái tạm dừng
+        self.elapsed_time = 0  # Thời gian đã trôi qua tính bằng giây
 
         # Initialize player
         self.player = Player(self)
@@ -165,6 +186,20 @@ class GamePanel:
             self.background_sound.play(-1)  # -1 for loop
         except:
             print("Error loading background sound")
+
+        # Load and start skill sound
+        try:
+            self.skill_sound = pygame.mixer.Sound("src\\game\\Data\\skill.WAV")
+        except:
+            print("Error loading skill sound")
+            self.skill_sound = None
+
+        # Load and start pick sound
+        try:
+            self.pick_sound = pygame.mixer.Sound("src\\game\\Data\\pick.wav")
+        except:
+            print("Error loading pick sound")
+            self.pick_sound = None
 
         # Initialize game over dialog (Tkinter)
         self.root = tk.Tk()
@@ -241,6 +276,7 @@ class GamePanel:
             # Kiểm tra sự kiện click chuột trái (chỉ khi không tạm dừng)
             if not self.paused and event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # 1 là mã nút cho chuột trái
+                    self.skill_sound.play()
                     mouse_x, mouse_y = pygame.mouse.get_pos()  # Lấy vị trí chuột trên màn hình
                     self.player.shoot(mouse_x, mouse_y)  # Truyền tọa độ chuột vào phương thức shoot
 
