@@ -2,14 +2,14 @@
 
 body {
     font-family: 'Maven Pro', sans-serif;
-    overflow-x: hidden;
     user-select: none;
+    overflow-x: hidden;
 }
 
 #main {
     height: 100vh;
     width: 100vw;
-    background: url('/ui/assets/img/background.jpg') no-repeat;
+    background: url('/ui/assets/img/background.jpg') no-repeat center;
 }
 
 #main .logo {
@@ -63,6 +63,10 @@ body {
     align-items: center;
 }
 
+#main .options .play-btn {
+    text-decoration: none;
+}
+
 #main .options li {
     display: flex;
     width: 36.375rem;
@@ -82,4 +86,82 @@ body {
 #main .options li:hover {
     opacity: 0.8;
     cursor: pointer;
+}
+
+#main .leaderboard {
+    width: 60rem;
+    height: 35rem;
+    background: url('/ui/assets/img/leaderboard.jpg') no-repeat;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#main .leaderboard .mark {
+    position: absolute;
+    right: 0;
+    top: 4px;
+    width: 6.25rem;
+    height: 5.75rem;
+    color: #fff;
+    text-align: center;
+    font-family: Jua;
+    font-size: 4.375rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+}
+
+#main .leaderboard .header {
+    position: absolute;
+    top: -32px;
+    width: 25.4375rem;
+    height: 8.1875rem;
+    color: #fff;
+    text-align: center;
+    font-family: Jua;
+    font-size: 4.375rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+}
+
+#main .leaderboard table {
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: translateX(-5px);
+}
+
+#main .leaderboard table th {
+    width: 22.1875rem;
+    height: 8.1875rem;
+    flex-direction: column;
+    justify-content: center;
+    flex-shrink: 0;
+    text-align: center;
+    font-family: Jua;
+    font-size: 3.125rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+}
+
+#main .leaderboard table td {
+    width: 22.8125rem;
+    height: 4.5625rem;
+    flex-direction: column;
+    justify-content: center;
+    flex-shrink: 0;
+    text-align: center;
+    font-family: 'Maven Pro';
+    font-size: 2.5rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
 }
