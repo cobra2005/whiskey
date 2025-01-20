@@ -283,10 +283,15 @@ class GamePanel:
             
 
     def check_collision_with_enemy(self):
-        # Check collision between player and enemies
+        # Đặt tỉ lệ phần trăm mà quái vật cần đè lên người chơi để game over
+        collision_threshold = 0.6  # 1 - collision_threshold phần của kẻ địch
+
+        # Duyệt qua tất cả kẻ địch và kiểm tra va chạm
         for enemy in self.enemies:
-            if abs(self.player.x - enemy.x) < self.tile_size and abs(self.player.y - enemy.y) < self.tile_size:
-                self.game_over()
+            # Kiểm tra nếu một phần của quái vật chạm vào người chơi
+            if (abs(self.player.x - enemy.x) < self.tile_size * collision_threshold and
+                abs(self.player.y - enemy.y) < self.tile_size * collision_threshold):
+                self.game_over()  # Kết thúc trò chơi khi va chạm xảy ra
 
     def show_game_over_message(self):
         # Hiển thị hộp thoại Game Over
