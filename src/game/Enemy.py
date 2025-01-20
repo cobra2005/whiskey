@@ -54,15 +54,11 @@ class Enemy:
             self.y -= self.speed
 
     def draw(self, screen):
-
-
         if self.image:
             screen.blit(self.image, (self.x, self.y))
         else:
             pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, self.tile_size, self.tile_size))
         
-        # Gọi phương thức vẽ thanh máu
-        self.draw_health_bar(screen, 48)
 
 
 class FastEnemy(Enemy):
@@ -103,5 +99,14 @@ class StrongEnemy(Enemy):
     def update(self, player):
         # Logic di chuyển tương tự quái thường
         super().update(player)
+
+    def draw(self, screen):
+        if self.image:
+            screen.blit(self.image, (self.x, self.y))
+        else:
+            pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, self.tile_size, self.tile_size))
+        
+        # Gọi phương thức vẽ thanh máu
+        self.draw_health_bar(screen, 48)
 
     
