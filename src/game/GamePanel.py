@@ -138,7 +138,7 @@ class GamePanel:
 
         # Tính vị trí để hiển thị ở giữa màn hình
         x_position = (self.screen_width - text_width) // 2
-        y_position = self.screen_height // 10  # Ví dụ: đặt ở 1/10 chiều cao màn hình
+        y_position = self.screen_height // 25  # Ví dụ: đặt ở 1/20 chiều cao màn hình
 
         # Vẽ thời gian ra màn hình
         self.screen.blit(time_surface, (x_position, y_position))
